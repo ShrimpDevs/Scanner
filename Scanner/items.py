@@ -8,7 +8,10 @@
 import scrapy
 
 
-class ScannerItem(scrapy.Item):
+class ParserItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
-    pass
+    title = scrapy.Field()
+    body = scrapy.Field()
+    date = scrapy.Field()
+    # pass
