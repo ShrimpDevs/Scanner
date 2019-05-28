@@ -1,8 +1,9 @@
+# -*- coding: utf-8 -*-
 # файл журнала
-logFilePath = 'C:\\Users\\alexp\\OneDrive\\Рабочий стол\\Standalone\\log.txt'
+logFilePath = 'C:\\Projects\\Git\\Scanner\\Standalone\\log.txt'
 # файл статистики
-statsFilePath = 'C:\\Users\\alexp\\OneDrive\\Рабочий стол\\Standalone\\stats.txt'
+statsFilePath = 'C:\\Projects\\Git\\Scanner\\Standalone\\stats.txt'
 # файл списка сайтов
-resourcesFilePath = 'C:\\Users\\alexp\\OneDrive\\Рабочий стол\\Standalone\\resources.txt'
+resourcesFilePath = 'C:\\Projects\\Git\\Scanner\\Standalone\\resources.txt'
 # файл списка сайтов для тестирования
-testFilePath = 'C:\\Users\\alexp\\OneDrive\\Рабочий стол\\Standalone\\test.txt'
+testFilePath = 'C:\\Projects\\Git\\Scanner\\Standalone\\test.txt'

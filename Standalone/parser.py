@@ -1,20 +1,22 @@
+# -*- coding: utf-8 -*-
 import time
 import requests
 import settings
 import datetime
+import numpy as np
 from bs4 import BeautifulSoup
 from collections import OrderedDict
- 
-# для статистики
-allCount = 0  # количество сайтов
-currCount = 0  # текущее количество обработанных сайтов
-linkCount = 0  # количество ссылок
-parsedLinkCount = 0  # количество обработанных ссылок
-withPrivacy = 0  # количество сайтов с политикой конфиденциальности
-abadoned = 0  # количество не работающих сайтов
-withSSL = 0  # количество сайтов с SSL
+
 
 class Parser():
+    # для статистики
+    allCount = 0            # количество сайтов
+    count = 0               # количество обработанных сайтов
+    linkCount = 0           # количество ссылок
+    parsedLinkCount = 0     # количество обработанных ссылок
+    withPrivacy = 0         # количество сайтов с политикой конфиденциальности
+    abadoned = 0            # количество не работающих сайтов
+    withSSL = 0             # количество сайтов с SSL
 
     def currentDateTime(self, mode):
         today = datetime.datetime.today()
@@ -23,7 +25,7 @@ class Parser():
         if mode == 'time':
             return today.strftime('%H:%M:%S')
 
-    #Получаем список ссылок с страницы
+    # Получаем список ссылок с страницы
     def getLinks(self, url):
         r = requests.get(url)
         soup = BeautifulSoup(r.text, 'lxml')
@@ -34,56 +36,129 @@ class Parser():
         return links
 
     def toLogFile(self, time, text):
-            f = open('log.txt','a')
-            if time == 'time':
-                f.write(self.currentDateTime('time'), text + '\n')
-            if time == 'date':
-                f.write(self.currentDateTime('date'), text + '\n')
-            f.close()
+        string = ''
+        if time == 'time':
+            string = self.currentDateTime('time') + ':' + text + '\n'
+        if time == 'date':
+            string = self.currentDateTime('date') + ':' + text + '\n'
+
+        print(string.replace('\n', ''))
+        f = open('log.txt', 'a')
+        f.write(string)
+        f.close()
 
     def main(self):
-        self.toLogFile('date','Начало сканирования')
+
+        words = ['Политика конфиденциальности', 'Условия обработки персональных данных',
+                 'Privacy Policy', 'Privacy Statement', 'Privacy notice']
+        keywords = []
+        for i in words:
+            keywords.append(i)
+            keywords.append(i.lower())
+            keywords.append(i.upper())
+
+        self.toLogFile('date', 'Начало сканирования')
+        startDate = datetime.datetime.now()
+
         # ссылки с файла в список
-        path = settings.testFilePath
+        path = settings.resourcesFilePath
         f = open(path, 'r')
-        lines = [line.strip() for line in f]
+        url_list = [line.strip() for line in f]
         f.close()
 
-        url_list = []
+        # убрать возможные дубликаты
+        url_list = list(dict.fromkeys(url_list))
+
+        self.allCount = len(url_list)
 
         # перебор списка сайтов
-        for url in lines:
+        for url in url_list:
+            self.count += 1
+            countText = str(self.count) + '/' + str(self.allCount)
+            try:
+                self.toLogFile('time', countText)
+                self.toLogFile('time', url)
 
-            #uniq_list_links = list(OrderedDict.fromkeys(url_list).keys())
-            #links_of_pages = []
-            #count = 1
-            #for x in url_list:
-            #    get_x = requests.get(url + x)
-            #    bsoup = BeautifulSoup(get_x.text, 'lxml')
-            #    all_hrefs = bsoup.findAll('a')
-            #    for link in all_hrefs:
-            #        if link not in uniq_list_links:
-            #            links_of_pages.append(url + str(link.get('href')))
-            #            print(count)
-            #            count += 1
-            #        else:
-            #            continue
-            #        
-            #print(len(links_of_pages))
-            #print(list(OrderedDict.fromkeys(links_of_pages).keys()))
-            pass
+                # инициализирование
+                headers = {'User-Agent': 'Mozilla/5.0'}
+                r = requests.get(url, headers=headers, timeout=120)
 
-        self.toLogFile('date','Завершение сканирования')    
-        f = open(settings.statsFilePath, 'a')
-        f.write('Количество сайтов: ' + str(allCount))
-        f.write('Количество обработанных сайтов: ' + str(currCount))
-        f.write('Количество ссылок: ' + str(linkCount))
-        f.write('Количество обработанных ссылок: ' + str(parsedLinkCount))
-        f.write('Количество сайтов с политикой: ' + str(withPrivacy))
-        f.write('Количество не работающих сайтов: ' + str(abadoned))
-        f.write('Количество сайтов с SSL: ' + str(withSSL))
+                # проверка на response code
+                if r.status_code != 200:
+                    responceText = 'HTTP Response: ' + r.response_code
+                    self.toLogFile('time', responceText)
+                    self.abadoned += 1
+                    continue
+                else:
+                    self.toLogFile('time', 'HTTP Response: 200')
+
+                # проверка на SSL
+                if 'https' in r.url:
+                    self.toLogFile('time', 'Обнаружен SSL-сертификат.')
+                    self.withSSL += 1
+
+                # подготовка объекта для парсинга
+                soup = BeautifulSoup(r.text, 'html.parser')
+
+                # проверки на наличие политики
+                privacyLinks = []
+
+                for link in soup.findAll('a', text=keywords):
+                    privacyLinks.append(link.get('href'))
+
+                # проверка на уникальность
+                privacyLinksBuff = []
+                for i in privacyLinks:
+                    # корректность ссылки
+                    if 'http' not in i.replace('https', 'http'):
+                        if i[0] == '/':
+                            i = url + i
+                        else:
+                            i = url + '/' + i
+
+                    privacyLinksBuff.append(i.replace('https', 'http'))
+                privacyLinks = list(dict.fromkeys(privacyLinksBuff))
+
+                if len(privacyLinks) > 0:
+                    self.withPrivacy += 1
+                    privacyText = 'Ссылка на политику:' + privacyLinks[0]
+                    self.toLogFile('time', privacyText)
+                else:
+                    self.toLogFile('time', 'Политика не найдена.')
+            except Exception:
+                excText = 'Ошибка:' + Exception
+                self.toLogFile('time', excText)
+                self.abadoned += 1
+
+            # вывод статистики в файл
+            f = open(settings.statsFilePath, 'w')
+            f.write('Количество сайтов: ' + str(self.allCount) + '\n')  # +++
+            f.write('Количество обработанных сайтов: ' +
+                    str(self.count) + '\n')  # +++
+            # f.write('Количество ссылок: ' + str(self.linkCount) + '\n')  # ---
+            # f.write('Количество обработанных ссылок: ' + str(self.parsedLinkCount) + '\n')  # ---
+            f.write('Количество сайтов с политикой: ' +
+                    str(self.withPrivacy) + '\n')  # +++
+            f.write('Количество не работающих сайтов: ' +
+                    str(self.abadoned) + '\n')  # +++
+            f.write('Количество сайтов с SSL: ' +
+                    str(self.withSSL) + '\n')  # +++
+            f.close()
+
+        self.toLogFile('date', 'Завершение сканирования')
+        # расчет времени сканирования
+        finishDate = datetime.datetime.now()
+        c = finishDate - startDate
+        time = divmod(c.days * 86400 + c.seconds, 60)
+        print('\nВремя сканирования:', time[0], 'мин.', time[1], 'сек.\n')
+
+        # вывод статистики в консоль
+        f = open(settings.statsFilePath)
+        for line in f:
+            print(line.replace('\n', ''))
         f.close()
 
 
-parser = Parser()
-parser.main()
+if __name__ == '__main__':
+    parser = Parser()
+    parser.main()
