@@ -81,7 +81,7 @@ class Parser():
 
                 # инициализирование
                 headers = {'User-Agent': 'Mozilla/5.0'}
-                r = requests.get(url, headers=headers, timeout=60)
+                r = requests.get(url, headers=headers, timeout=30)  #
 
                 # проверка на response code
                 if r.status_code != 200:
