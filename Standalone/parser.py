@@ -81,7 +81,7 @@ class Parser():
 
                 # инициализирование
                 headers = {'User-Agent': 'Mozilla/5.0'}
-                r = requests.get(url, headers=headers, timeout=120)
+                r = requests.get(url, headers=headers, timeout=60)
 
                 # проверка на response code
                 if r.status_code != 200:
@@ -125,9 +125,8 @@ class Parser():
                     self.toLogFile('time', privacyText)
                 else:
                     self.toLogFile('time', 'Политика не найдена.')
-            except Exception:
-                excText = 'Ошибка:' + Exception
-                self.toLogFile('time', excText)
+            except:
+                self.toLogFile('time', 'Неизвестная ошибка.')
                 self.abadoned += 1
 
             # вывод статистики в файл

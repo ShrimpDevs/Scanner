@@ -1,0 +1,13 @@
+2019.05.28 11:44:22:Начало сканирования
+11:44:22:1/1833
+11:44:22:http://www.123stitch.com
+11:44:24:HTTP Response: 200
+11:44:24:Обнаружен SSL-сертификат.
+11:44:24:Политика не найдена.
+11:44:24:2/1833
+11:44:24:http://www.abercrombie.com
+11:44:24:HTTP Response: 200
+11:44:24:Обнаружен SSL-сертификат.
+11:44:24:Ссылка на политику:http://www.abercrombie.com/shop/CustomerServiceDisplay?pageName=privacy-policy&storeId=11203&textKey=LEGAL_PRIVACY_POLICY&catalogId=10901&langId=-1
+11:44:24:3/1833
+11:44:24:http://www.achildscloset.com
