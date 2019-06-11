@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 import requests
-import settings
 import datetime
-import numpy as np
 from bs4 import BeautifulSoup
 from collections import OrderedDict
 
@@ -15,6 +13,7 @@ class Parser():
     linkCount = 0           # количество ссылок
     parsedLinkCount = 0     # количество обработанных ссылок
     withPrivacy = 0         # количество сайтов с политикой конфиденциальности
+    withTerms = 0           # количество сайтов с условиями обслуживания
     abadoned = 0            # количество не работающих сайтов
     withSSL = 0             # количество сайтов с SSL
 
@@ -43,25 +42,41 @@ class Parser():
             string = self.currentDateTime('date') + ':' + text + '\n'
 
         print(string.replace('\n', ''))
-        f = open('log.txt', 'a')
+        f = open('log.txt', 'a+')
         f.write(string)
         f.close()
 
     def main(self):
 
-        words = ['Политика конфиденциальности', 'Условия обработки персональных данных',
-                 'Privacy Policy', 'Privacy Statement', 'Privacy notice']
+        policyKeys = ['Политика конфиденциальности', 'Условия обработки персональных данных',
+                      'Privacy Policy', 'Privacy Statement', 'Privacy notice', 'Datenschutz-Bestimmungen',
+                      'Datenschutzerklärung', 'Datenschutzbestimmungen', 'Politique de confidentialité',
+                      'Política de privacidad', 'Privacybeleid', 'Personvernpolicy', 'Retningslinjer for personvern',
+                      'Polityka prywatności', 'Politica de confidentialitate', 'Integritetspolicy', 'Privaatsuspoliitika']
+
+        termsKeys = ['Условия обслуживания', 'Условия использования', 'Условия и положения', 'Правила и условия',
+                     'Условия предоставления услуг', 'Terms and Conditions', 'Terms & Conditions', 'Terms of Service', 'Nutzungsbedingungen',
+                     'Términos de servicio', 'Términos y Condiciones', 'Termini e condizioni', 'Termini di servizio']
+
+        # формирование ключевых слов
         keywords = []
-        for i in words:
+        for i in policyKeys:
             keywords.append(i)
             keywords.append(i.lower())
             keywords.append(i.upper())
+
+        keywords_terms = []
+        for i in termsKeys:
+            keywords_terms.append(i)
+            keywords_terms.append(i.lower())
+            keywords_terms.append(i.upper())
 
         self.toLogFile('date', 'Начало сканирования')
         startDate = datetime.datetime.now()
 
         # ссылки с файла в список
-        path = settings.resourcesFilePath
+        # path = settings.resourcesFilePath
+        path = 'resources.txt'
         f = open(path, 'r')
         url_list = [line.strip() for line in f]
         f.close()
@@ -81,7 +96,7 @@ class Parser():
 
                 # инициализирование
                 headers = {'User-Agent': 'Mozilla/5.0'}
-                r = requests.get(url, headers=headers, timeout=30)  #
+                r = requests.get(url, headers=headers, timeout=30)
 
                 # проверка на response code
                 if r.status_code != 200:
@@ -115,8 +130,8 @@ class Parser():
                             i = url + i
                         else:
                             i = url + '/' + i
-
                     privacyLinksBuff.append(i.replace('https', 'http'))
+
                 privacyLinks = list(dict.fromkeys(privacyLinksBuff))
 
                 if len(privacyLinks) > 0:
@@ -125,12 +140,41 @@ class Parser():
                     self.toLogFile('time', privacyText)
                 else:
                     self.toLogFile('time', 'Политика не найдена.')
+
+                ###########################################
+                # проверки на наличие условий обслуживания
+                termsLinks = []
+
+                for link in soup.findAll('a', text=keywords_terms):
+                    termsLinks.append(link.get('href'))
+
+                # проверка на уникальность
+                termsLinksBuff = []
+                for i in termsLinks:
+                    # корректность ссылки
+                    if 'http' not in i.replace('https', 'http'):
+                        if i[0] == '/':
+                            i = url + i
+                        else:
+                            i = url + '/' + i
+                    termsLinksBuff.append(i.replace('https', 'http'))
+
+                termsLinks = list(dict.fromkeys(termsLinksBuff))
+
+                if len(termsLinks) > 0:
+                    self.withTerms += 1
+                    termsText = 'Ссылка на условия обслуживания:' + \
+                        termsLinks[0]
+                    self.toLogFile('time', termsText)
+                else:
+                    self.toLogFile('time', 'Условия обслуживания не найдены.')
+
             except:
                 self.toLogFile('time', 'Неизвестная ошибка.')
                 self.abadoned += 1
 
             # вывод статистики в файл
-            f = open(settings.statsFilePath, 'w')
+            f = open('stats.txt', 'w+')
             f.write('Количество сайтов: ' + str(self.allCount) + '\n')  # +++
             f.write('Количество обработанных сайтов: ' +
                     str(self.count) + '\n')  # +++
@@ -142,6 +186,8 @@ class Parser():
                     str(self.abadoned) + '\n')  # +++
             f.write('Количество сайтов с SSL: ' +
                     str(self.withSSL) + '\n')  # +++
+            f.write('Количество сайтов с условиями обслуживания: ' +
+                    str(self.withTerms) + '\n')  # +++
             f.close()
 
         self.toLogFile('date', 'Завершение сканирования')
@@ -152,7 +198,7 @@ class Parser():
         print('\nВремя сканирования:', time[0], 'мин.', time[1], 'сек.\n')
 
         # вывод статистики в консоль
-        f = open(settings.statsFilePath)
+        f = open('stats.txt', 'w+')
         for line in f:
             print(line.replace('\n', ''))
         f.close()
