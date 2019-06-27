@@ -178,7 +178,8 @@ class Parser():
             f.write('Количество сайтов: ' + str(self.allCount) + '\n')  # +++
             f.write('Количество обработанных сайтов: ' +
                     str(self.count) + '\n')  # +++
-            # f.write('Количество ссылок: ' + str(self.linkCount) + '\n')  # ---
+            f.write('Количество сайтов с условиями обслуживания: ' +
+                    str(self.withTerms) + '\n')  # ---
             # f.write('Количество обработанных ссылок: ' + str(self.parsedLinkCount) + '\n')  # ---
             f.write('Количество сайтов с политикой: ' +
                     str(self.withPrivacy) + '\n')  # +++
