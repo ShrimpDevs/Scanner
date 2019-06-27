@@ -174,7 +174,7 @@ class Parser():
                 self.abadoned += 1
 
             # вывод статистики в файл
-            f = open('stats.txt', 'w+')
+            f = open('stats.txt', 'w')
             f.write('Количество сайтов: ' + str(self.allCount) + '\n')  # +++
             f.write('Количество обработанных сайтов: ' +
                     str(self.count) + '\n')  # +++
@@ -186,8 +186,6 @@ class Parser():
                     str(self.abadoned) + '\n')  # +++
             f.write('Количество сайтов с SSL: ' +
                     str(self.withSSL) + '\n')  # +++
-            f.write('Количество сайтов с условиями обслуживания: ' +
-                    str(self.withTerms) + '\n')  # +++
             f.close()
 
         self.toLogFile('date', 'Завершение сканирования')
@@ -198,7 +196,7 @@ class Parser():
         print('\nВремя сканирования:', time[0], 'мин.', time[1], 'сек.\n')
 
         # вывод статистики в консоль
-        f = open('stats.txt', 'w+')
+        f = open('stats.txt')
         for line in f:
             print(line.replace('\n', ''))
         f.close()
