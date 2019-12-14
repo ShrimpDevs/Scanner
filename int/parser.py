@@ -76,7 +76,7 @@ class Parser():
 
         # ссылки с файла в список
         # path = settings.resourcesFilePath
-        path = 'resources.txt'
+        path = 'international.txt'
         f = open(path, 'r')
         url_list = [line.strip() for line in f]
         f.close()
@@ -96,7 +96,7 @@ class Parser():
 
                 # инициализирование
                 headers = {'User-Agent': 'Mozilla/5.0'}
-                r = reque   ts.get(url, headers=headers, timeout=30)
+                r = requests.get(url, headers=headers, timeout=30)
 
                 # проверка на response code
                 if r.status_code != 200:
